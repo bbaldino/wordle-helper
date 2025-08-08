@@ -8,13 +8,12 @@ interface LetterBox {
 }
 
 interface WordGuessAreaProps {
-  onLetterStateChange?: (letter: string, state: LetterState) => void;
   onGridChange?: (grid: LetterBox[][]) => void;
 }
 
 export type { LetterBox };
 
-const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onLetterStateChange, onGridChange }) => {
+const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
   // Initialize 6 rows of 5 empty letter boxes (like Wordle)
   const initializeGrid = (): LetterBox[][] => {
     return Array(6).fill(null).map(() => 
@@ -59,10 +58,7 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onLetterStateChange, onGr
           state: newState
         };
 
-        // Sync with keyboard
-        if (onLetterStateChange) {
-          onLetterStateChange(letterBox.letter, newState);
-        }
+        // Letter state updated in grid
         
         // Notify parent of grid changes
         if (onGridChange) {
