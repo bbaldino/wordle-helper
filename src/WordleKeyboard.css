@@ -1,0 +1,127 @@
+.wordle-keyboard {
+  max-width: 500px;
+  margin: 20px auto;
+  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+}
+
+.keyboard-instructions {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.keyboard-instructions p {
+  margin: 0 0 10px 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.state-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 15px;
+  font-size: 12px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  border: 1px solid #ccc;
+}
+
+.legend-color--not-guessed {
+  background-color: #d3d6da; /* Light gray */
+}
+
+.legend-color--not-in-word {
+  background-color: #787c7e; /* Dark gray */
+}
+
+.legend-color--in-word-wrong-position {
+  background-color: #c9b458; /* Yellow */
+}
+
+.legend-color--in-word-correct-position {
+  background-color: #6aaa64; /* Green */
+}
+
+.keyboard-row {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.keyboard-row:nth-child(2) {
+  padding: 0 15px;
+}
+
+.keyboard-row:nth-child(3) {
+  padding: 0 30px;
+}
+
+.keyboard-key {
+  min-width: 43px;
+  height: 58px;
+  margin: 0 3px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.1s ease-in-out;
+  text-transform: uppercase;
+}
+
+.keyboard-key:hover {
+  transform: scale(1.05);
+}
+
+.keyboard-key:active {
+  transform: scale(0.95);
+}
+
+/* Letter state styles */
+.keyboard-key--not-guessed {
+  background-color: #d3d6da; /* Light gray */
+  color: #1a1a1b;
+}
+
+.keyboard-key--not-guessed:hover {
+  background-color: #c0c4c8;
+}
+
+.keyboard-key--not-in-word {
+  background-color: #787c7e; /* Dark gray */
+  color: white;
+}
+
+.keyboard-key--not-in-word:hover {
+  background-color: #6a6e70;
+}
+
+.keyboard-key--in-word-wrong-position {
+  background-color: #c9b458; /* Yellow */
+  color: white;
+}
+
+.keyboard-key--in-word-wrong-position:hover {
+  background-color: #b8a34a;
+}
+
+.keyboard-key--in-word-correct-position {
+  background-color: #6aaa64; /* Green */
+  color: white;
+}
+
+.keyboard-key--in-word-correct-position:hover {
+  background-color: #5d9857;
+}
