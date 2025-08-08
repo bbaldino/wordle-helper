@@ -29,12 +29,35 @@
 
 .App-main {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: center;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto;
+  gap: 20px;
+  justify-items: center;
+  align-content: start;
   padding: 20px;
   background-color: #fafafa;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Responsive layout for wider screens */
+@media (min-width: 1024px) {
+  .App-main {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 40px;
+    align-items: start;
+    padding: 20px 40px;
+  }
+  
+  .word-guess-area {
+    justify-self: end;
+  }
+  
+  .word-pattern-generator {
+    justify-self: start;
+  }
 }
 
 body {
