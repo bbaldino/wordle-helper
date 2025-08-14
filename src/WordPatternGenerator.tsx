@@ -85,10 +85,15 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
         constraints.requiredCounts[letter] = Math.max(constraints.requiredCounts[letter] || 0, count);
       });
     });
-    // Build must-include letters for display: letters that had yellow evidence
-    // (present but not necessarily placed). This is UI-only and does not affect generation.
-    letterHasYellow.forEach((letter) => {
-      if ((constraints.requiredCounts[letter] || 0) > 0) {
+    // Build must-include letters: only letters whose required count exceeds
+    // the number already satisfied by confirmed (green) positions.
+    const placedByGreens: Record<string, number> = {};
+    Object.values(constraints.confirmedPositions).forEach((letter) => {
+      placedByGreens[letter] = (placedByGreens[letter] || 0) + 1;
+    });
+    Object.entries(constraints.requiredCounts).forEach(([letter, req]) => {
+      const placed = placedByGreens[letter] || 0;
+      if (req > placed) {
         constraints.mustIncludeLetters.add(letter);
       }
     });
@@ -217,6 +222,15 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
   const constraints = analyzeConstraints();
   const patterns = generatePatterns();
 
+  // Derive display-only must-include list: letters still needed beyond confirmed greens
+  const greensDisplayCount: Record<string, number> = {};
+  Object.values(constraints.confirmedPositions).forEach((letter) => {
+    greensDisplayCount[letter] = (greensDisplayCount[letter] || 0) + 1;
+  });
+  const displayMustInclude: string[] = Object.entries(constraints.requiredCounts)
+    .filter(([letter, req]) => req > (greensDisplayCount[letter] || 0))
+    .map(([letter]) => letter);
+
   return (
     <div className="word-pattern-generator">
       <div className="pattern-header">
@@ -238,11 +252,11 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
           </div>
         )}
 
-        {constraints.mustIncludeLetters.size > 0 && (
+        {displayMustInclude.length > 0 && (
           <div className="constraint-group">
             <strong>Must include letters:</strong>
             <div className="must-include-letters">
-              {Array.from(constraints.mustIncludeLetters).map(letter => (
+              {displayMustInclude.map(letter => (
                 <span key={letter} className="must-include-letter">
                   {letter}
                 </span>
