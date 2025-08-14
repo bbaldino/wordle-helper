@@ -33,7 +33,9 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
     const letterHasGreen = new Set<string>();
     const letterHasYellow = new Set<string>();
     const letterHasGray = new Set<string>();
-    const greensByLetter: Record<string, number> = {};
+    // We do not sum greens across rows (different guesses). The minimal
+    // required count for a letter is the maximum number of present occurrences
+    // (yellow+green) seen in any single row/guess.
 
     // Analyze each cell in the grid
     grid.forEach((row) => {
@@ -47,7 +49,6 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
             // Green: Letter is confirmed in this position
             constraints.confirmedPositions[colIndex] = letter;
             letterHasGreen.add(letter);
-            greensByLetter[letter] = (greensByLetter[letter] || 0) + 1;
             break;
           }
           case 'in-word-wrong-position': {
@@ -84,15 +85,10 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
         constraints.requiredCounts[letter] = Math.max(constraints.requiredCounts[letter] || 0, count);
       });
     });
-    // Ensure required count is at least number of greens seen overall for that letter
-    Object.entries(greensByLetter).forEach(([letter, gCount]) => {
-      constraints.requiredCounts[letter] = Math.max(constraints.requiredCounts[letter] || 0, gCount);
-    });
-
-    // Build must-include letters: those whose required count exceeds the number already satisfied by greens
-    Object.entries(constraints.requiredCounts).forEach(([letter, req]) => {
-      const placedByGreens = greensByLetter[letter] || 0;
-      if (req > placedByGreens) {
+    // Build must-include letters for display: letters that had yellow evidence
+    // (present but not necessarily placed). This is UI-only and does not affect generation.
+    letterHasYellow.forEach((letter) => {
+      if ((constraints.requiredCounts[letter] || 0) > 0) {
         constraints.mustIncludeLetters.add(letter);
       }
     });
@@ -169,9 +165,10 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
     });
 
     // Build a multiset of letters still needing placement (duplicates supported)
+    // Count already-placed greens directly from confirmedPositions for robustness
     const placedCountByLetter: Record<string, number> = {};
-    basePattern.forEach((ch) => {
-      if (ch) placedCountByLetter[ch] = (placedCountByLetter[ch] || 0) + 1;
+    Object.values(constraints.confirmedPositions).forEach((ch) => {
+      placedCountByLetter[ch] = (placedCountByLetter[ch] || 0) + 1;
     });
 
     const toPlace: string[] = [];
