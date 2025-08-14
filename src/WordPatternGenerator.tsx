@@ -27,36 +27,57 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
       wrongPositions: {}
     };
 
+    // Track global evidence per letter to resolve conflicts properly
+    const letterHasGreen = new Set<string>();
+    const letterHasYellow = new Set<string>();
+    const letterHasGray = new Set<string>();
+
     // Analyze each cell in the grid
-    grid.forEach((row, rowIndex) => {
+    grid.forEach((row) => {
       row.forEach((letterBox, colIndex) => {
         if (!letterBox.letter) return; // Skip empty boxes
 
         const letter = letterBox.letter.toUpperCase();
-        
+
         switch (letterBox.state) {
-          case 'in-word-correct-position':
+          case 'in-word-correct-position': {
             // Green: Letter is confirmed in this position
             constraints.confirmedPositions[colIndex] = letter;
+            letterHasGreen.add(letter);
             break;
-            
-          case 'in-word-wrong-position':
+          }
+          case 'in-word-wrong-position': {
             // Yellow: Letter is in the word but not in this position
-            constraints.mustIncludeLetters.add(letter);
+            letterHasYellow.add(letter);
             if (!constraints.wrongPositions[letter]) {
               constraints.wrongPositions[letter] = new Set();
             }
             constraints.wrongPositions[letter].add(colIndex);
             break;
-            
-          case 'not-in-word':
-            // Gray: Letter is not in the word at all
-            constraints.excludedLetters.add(letter);
+          }
+          case 'not-in-word': {
+            // Gray: Track, but only exclude if we never saw yellow/green
+            letterHasGray.add(letter);
             break;
-            
+          }
           // 'not-guessed' state is ignored for pattern generation
         }
       });
+    });
+
+    // Build must-include set: yellow letters that are NOT already confirmed somewhere in green
+    const confirmedLettersSet = new Set<string>(Object.values(constraints.confirmedPositions));
+    letterHasYellow.forEach((letter) => {
+      if (!confirmedLettersSet.has(letter)) {
+        constraints.mustIncludeLetters.add(letter);
+      }
+    });
+
+    // Build excluded set: letters seen as gray AND never seen as yellow nor green
+    letterHasGray.forEach((letter) => {
+      if (!letterHasGreen.has(letter) && !letterHasYellow.has(letter)) {
+        constraints.excludedLetters.add(letter);
+      }
     });
 
     return constraints;
