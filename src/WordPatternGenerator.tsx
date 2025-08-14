@@ -93,8 +93,7 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
     }
 
     const patterns: string[] = [];
-    const mustIncludeArray = Array.from(constraints.mustIncludeLetters);
-    
+
     // Generate all possible arrangements of the yellow letters in available positions
     const generateArrangements = (currentPattern: string[], remainingLetters: string[], usedPositions: Set<number>): void => {
       if (remainingLetters.length === 0) {
@@ -134,18 +133,36 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
       }
     };
 
-    // Start with confirmed positions
+    // Start with confirmed positions (greens first)
     const basePattern: string[] = new Array(5).fill('');
     const usedPositions = new Set<number>();
-    
+
     // Place confirmed letters (green)
     Object.entries(constraints.confirmedPositions).forEach(([pos, letter]) => {
-      basePattern[parseInt(pos)] = letter;
-      usedPositions.add(parseInt(pos));
+      const idx = parseInt(pos);
+      basePattern[idx] = letter;
+      usedPositions.add(idx);
     });
 
-    // Generate arrangements for yellow letters
+    // Determine which must-include (yellow) letters still need placement
+    // Exclude any letter that is already placed via green
+    const mustIncludeArray = Array.from(constraints.mustIncludeLetters).filter(
+      (letter) => !basePattern.includes(letter)
+    );
+
+    // Generate arrangements for remaining yellow letters
     generateArrangements(basePattern, mustIncludeArray, usedPositions);
+
+    // Fallback: if no patterns were generated, still return the base pattern with blanks
+    if (patterns.length === 0) {
+      const finalPattern = [...basePattern];
+      for (let i = 0; i < 5; i++) {
+        if (!finalPattern[i]) {
+          finalPattern[i] = '_';
+        }
+      }
+      patterns.push(finalPattern.join(''));
+    }
     
     // Remove duplicates and sort
     return Array.from(new Set(patterns)).sort();
