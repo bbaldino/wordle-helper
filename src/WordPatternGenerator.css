@@ -1,11 +1,12 @@
 .word-pattern-generator {
   width: 100%;
-  max-width: 500px;
+  max-width: 600px;
   margin: 0 auto 30px auto;
   padding: 20px;
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 }
 
 /* Responsive adjustments for side-by-side layout */
@@ -13,11 +14,10 @@
   .word-pattern-generator {
     margin: 0;
     max-width: none;
-    width: 100%;
   }
-  
+
   .patterns-list {
-    max-height: 500px;
+    max-height: 600px;
   }
 }
 
@@ -138,6 +138,61 @@
 .pattern-item {
   display: flex;
   justify-content: center;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+  padding: 4px;
+  border-radius: 4px;
+  transition: opacity 0.2s ease, background-color 0.2s ease;
+}
+
+.pattern-item--eliminated {
+  opacity: 0.4;
+  background-color: #f0f0f0;
+}
+
+.pattern-item--eliminated .pattern-cell--letter {
+  background-color: #d3d6da;
+  border-color: #999;
+  color: #666;
+}
+
+.pattern-eliminate-btn {
+  background: none;
+  border: 1px solid #d3d6da;
+  color: #787c7e;
+  font-size: 20px;
+  font-weight: bold;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.pattern-eliminate-btn:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+.pattern-item--eliminated .pattern-eliminate-btn {
+  background-color: #6aaa64;
+  border-color: #6aaa64;
+  color: white;
+}
+
+.pattern-item--eliminated .pattern-eliminate-btn:hover {
+  background-color: #5a9a54;
+  border-color: #5a9a54;
+  transform: scale(1.1);
 }
 
 .pattern-display {

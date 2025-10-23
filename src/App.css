@@ -33,30 +33,33 @@
   grid-template-columns: 1fr;
   grid-template-rows: auto auto;
   gap: 20px;
-  justify-items: center;
   align-content: start;
   padding: 20px;
   background-color: #fafafa;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: 100%;
 }
 
 /* Responsive layout for wider screens */
 @media (min-width: 1024px) {
   .App-main {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 2fr 3fr;
     grid-template-rows: 1fr;
-    gap: 40px;
+    gap: 30px;
     align-items: start;
-    padding: 20px 40px;
+    padding: 30px;
+    max-width: 1800px;
+    margin: 0 auto;
   }
-  
+
   .word-guess-area {
-    justify-self: end;
+    width: 100%;
+    max-width: 100%;
   }
-  
+
   .word-pattern-generator {
-    justify-self: start;
+    width: 100%;
+    max-width: 100%;
   }
 }
 

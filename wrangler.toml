@@ -1,5 +1,2 @@
 name = "wordle-helper"
-compatibility_date = "2025-10-23"
-
-[site]
-bucket = "./public"
+pages_build_output_dir = "./build"

@@ -20,6 +20,20 @@ interface Constraints {
 }
 
 const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => {
+  const [eliminatedPatterns, setEliminatedPatterns] = React.useState<Set<string>>(new Set());
+
+  const togglePatternElimination = (pattern: string) => {
+    setEliminatedPatterns(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(pattern)) {
+        newSet.delete(pattern);
+      } else {
+        newSet.add(pattern);
+      }
+      return newSet;
+    });
+  };
+
   const analyzeConstraints = (): Constraints => {
     const constraints: Constraints = {
       confirmedPositions: {},
@@ -222,6 +236,15 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
   const constraints = analyzeConstraints();
   const patterns = generatePatterns();
 
+  // Sort patterns: active patterns first, then eliminated patterns at the bottom
+  const sortedPatterns = [...patterns].sort((a, b) => {
+    const aEliminated = eliminatedPatterns.has(a);
+    const bEliminated = eliminatedPatterns.has(b);
+
+    if (aEliminated === bEliminated) return 0;
+    return aEliminated ? 1 : -1; // Eliminated patterns go to the bottom
+  });
+
   // Derive display-only must-include list: letters still needed beyond confirmed greens
   const greensDisplayCount: Record<string, number> = {};
   Object.values(constraints.confirmedPositions).forEach((letter) => {
@@ -290,11 +313,25 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
               <strong>{patterns.length}</strong> possible pattern{patterns.length !== 1 ? 's' : ''} found:
             </div>
             <div className="patterns-list">
-              {patterns.map((pattern, index) => (
-                <div key={index} className="pattern-item">
-                  {formatPatternDisplay(pattern)}
-                </div>
-              ))}
+              {sortedPatterns.map((pattern, index) => {
+                const isEliminated = eliminatedPatterns.has(pattern);
+                return (
+                  <div
+                    key={index}
+                    className={`pattern-item ${isEliminated ? 'pattern-item--eliminated' : ''}`}
+                  >
+                    {formatPatternDisplay(pattern)}
+                    <button
+                      className="pattern-eliminate-btn"
+                      onClick={() => togglePatternElimination(pattern)}
+                      aria-label={isEliminated ? 'Restore pattern' : 'Eliminate pattern'}
+                      title={isEliminated ? 'Click to restore' : 'Click to eliminate'}
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </>
         )}
