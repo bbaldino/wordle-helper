@@ -13,6 +13,7 @@ interface WordScratchPadProps {
 const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   const [wordIdeas, setWordIdeas] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
+  const [showClearModal, setShowClearModal] = useState(false);
 
   // Get all letters that have been guessed
   const getGuessedLetters = (): Set<string> => {
@@ -70,9 +71,16 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   };
 
   const handleClearAll = () => {
-    if (window.confirm('Clear all word ideas?')) {
-      setWordIdeas([]);
-    }
+    setShowClearModal(true);
+  };
+
+  const confirmClearAll = () => {
+    setWordIdeas([]);
+    setShowClearModal(false);
+  };
+
+  const cancelClearAll = () => {
+    setShowClearModal(false);
   };
 
   return (
@@ -162,6 +170,27 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
       {wordIdeas.length === 0 && (
         <div className="empty-state">
           <p>No word ideas yet. Add some words to keep track of them!</p>
+        </div>
+      )}
+
+      {showClearModal && (
+        <div className="modal-overlay" onClick={cancelClearAll}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Clear All Word Ideas?</h3>
+            </div>
+            <div className="modal-body">
+              <p>Are you sure you want to clear all {wordIdeas.length} word{wordIdeas.length !== 1 ? 's' : ''}? This action cannot be undone.</p>
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn modal-btn-cancel" onClick={cancelClearAll}>
+                Cancel
+              </button>
+              <button className="modal-btn modal-btn-confirm" onClick={confirmClearAll}>
+                Clear All
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
