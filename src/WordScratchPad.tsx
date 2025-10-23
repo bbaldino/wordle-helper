@@ -116,22 +116,22 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
     return invalid;
   }, [grid, wordIdeas, validateWord]);
 
-  // Get all letters that have been guessed
-  const getGuessedLetters = (): Set<string> => {
-    const guessed = new Set<string>();
+  // Get all letters that have been marked in guesses (any state except not-guessed)
+  const getKnownLetters = (): Set<string> => {
+    const known = new Set<string>();
     grid.forEach(row => {
       row.forEach(box => {
-        if (box.letter) {
-          guessed.add(box.letter.toUpperCase());
+        if (box.letter && box.state !== 'not-guessed') {
+          known.add(box.letter.toUpperCase());
         }
       });
     });
-    return guessed;
+    return known;
   };
 
-  // Calculate letter frequency from word ideas, excluding already guessed letters and invalid words
+  // Calculate letter frequency from valid word ideas only, excluding letters we already have info about
   const calculateLetterFrequency = (): { letter: string; count: number }[] => {
-    const guessedLetters = getGuessedLetters();
+    const knownLetters = getKnownLetters();
     const frequency: { [key: string]: number } = {};
 
     wordIdeas.forEach(word => {
@@ -141,7 +141,8 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
       const lettersInWord = new Set<string>(); // Track unique letters per word
       word.split('').forEach(letter => {
         const upperLetter = letter.toUpperCase();
-        if (!guessedLetters.has(upperLetter)) {
+        // Only include letters we don't have info about yet
+        if (!knownLetters.has(upperLetter)) {
           lettersInWord.add(upperLetter);
         }
       });
@@ -297,8 +298,8 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
             return letterFrequency.length > 0 ? (
               <div className="letter-frequency-container">
                 <div className="frequency-header">
-                  <h4>Unguessed Letter Frequency</h4>
-                  <p>Letters that appear in your word ideas but haven't been guessed yet</p>
+                  <h4>Unknown Letter Frequency</h4>
+                  <p>Letters in your valid word ideas that you haven't tested yet</p>
                 </div>
                 <div className="frequency-list">
                   {letterFrequency.map(({ letter, count }) => (
@@ -308,7 +309,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
                         <div
                           className="frequency-bar"
                           style={{
-                            width: `${(count / wordIdeas.length) * 100}%`
+                            width: `${(count / (wordIdeas.length - invalidWords.size)) * 100}%`
                           }}
                         />
                       </div>
@@ -317,7 +318,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
                   ))}
                 </div>
                 <div className="frequency-hint">
-                  <strong>Tip:</strong> Try guessing words with these letters to narrow down your options!
+                  <strong>Tip:</strong> Letters that appear in more word ideas can help you eliminate multiple possibilities at once!
                 </div>
               </div>
             ) : null;
