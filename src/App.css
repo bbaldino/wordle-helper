@@ -57,6 +57,13 @@
     max-width: 100%;
   }
 
+  .right-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+  }
+
   .word-pattern-generator {
     width: 100%;
     max-width: 100%;

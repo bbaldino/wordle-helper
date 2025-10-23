@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import './App.css';
 import WordGuessArea, { LetterBox } from './WordGuessArea';
 import WordPatternGenerator from './WordPatternGenerator';
+import WordScratchPad from './WordScratchPad';
 
 function App() {
   // Store the grid data for pattern generation
@@ -17,12 +18,15 @@ function App() {
         <h1>Wordle Helper</h1>
         <p>Enter your previous guesses and mark letter states to get help with your Wordle puzzle</p>
       </header>
-      
+
       <main className="App-main">
-        <WordGuessArea 
+        <WordGuessArea
           onGridChange={handleGridChange}
         />
-        <WordPatternGenerator grid={grid} />
+        <div className="right-column">
+          <WordPatternGenerator grid={grid} />
+          <WordScratchPad />
+        </div>
       </main>
     </div>
   );
