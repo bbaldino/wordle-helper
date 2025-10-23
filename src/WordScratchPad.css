@@ -35,10 +35,14 @@
   color: #787c7e;
 }
 
+.word-input-section {
+  margin-bottom: 20px;
+}
+
 .word-input-area {
   display: flex;
   gap: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 8px;
 }
 
 .word-input {
@@ -57,9 +61,51 @@
   border-color: #6aaa64;
 }
 
+.word-input--error {
+  border-color: #ef4444;
+}
+
+.word-input--error:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
 .word-input::placeholder {
   text-transform: none;
   font-weight: normal;
+}
+
+.validation-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 13px;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.error-icon {
+  flex-shrink: 0;
+  color: #ef4444;
+}
+
+.validation-error span {
+  font-weight: 500;
 }
 
 .add-word-btn {

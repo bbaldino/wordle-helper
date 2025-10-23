@@ -14,6 +14,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   const [wordIdeas, setWordIdeas] = useState<string[]>([]);
   const [currentInput, setCurrentInput] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
+  const [validationError, setValidationError] = useState<string>('');
 
   // Get all letters that have been guessed
   const getGuessedLetters = (): Set<string> => {
@@ -52,11 +53,129 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
       .sort((a, b) => b.count - a.count);
   };
 
+  // Validate word against grid constraints
+  const validateWord = (word: string): { valid: boolean; error: string } => {
+    const upperWord = word.toUpperCase();
+
+    // Build constraints from grid
+    const excludedLetters = new Set<string>();
+    const requiredLetters = new Set<string>();
+    const confirmedPositions: { [pos: number]: string } = {};
+    const wrongPositions: { [letter: string]: Set<number> } = {};
+
+    grid.forEach(row => {
+      row.forEach((box, colIndex) => {
+        if (!box.letter) return;
+        const letter = box.letter.toUpperCase();
+
+        switch (box.state) {
+          case 'in-word-correct-position':
+            confirmedPositions[colIndex] = letter;
+            requiredLetters.add(letter);
+            break;
+          case 'in-word-wrong-position':
+            requiredLetters.add(letter);
+            if (!wrongPositions[letter]) {
+              wrongPositions[letter] = new Set();
+            }
+            wrongPositions[letter].add(colIndex);
+            break;
+          case 'not-in-word':
+            // Only exclude if letter never appears as green or yellow
+            const letterInWord = Array.from(grid.flat()).some(
+              b => b.letter?.toUpperCase() === letter &&
+                   (b.state === 'in-word-correct-position' || b.state === 'in-word-wrong-position')
+            );
+            if (!letterInWord) {
+              excludedLetters.add(letter);
+            }
+            break;
+        }
+      });
+    });
+
+    // Check for excluded letters
+    for (let i = 0; i < upperWord.length; i++) {
+      const letter = upperWord[i];
+      if (excludedLetters.has(letter)) {
+        return {
+          valid: false,
+          error: `Letter '${letter}' is marked as not in the word`
+        };
+      }
+    }
+
+    // Check confirmed positions
+    for (const [pos, letter] of Object.entries(confirmedPositions)) {
+      const position = parseInt(pos);
+      if (upperWord[position] !== letter) {
+        return {
+          valid: false,
+          error: `Position ${position + 1} must be '${letter}'`
+        };
+      }
+    }
+
+    // Check wrong positions
+    for (const [letter, positions] of Object.entries(wrongPositions)) {
+      for (const pos of Array.from(positions)) {
+        if (upperWord[pos] === letter) {
+          return {
+            valid: false,
+            error: `Letter '${letter}' cannot be at position ${pos + 1}`
+          };
+        }
+      }
+    }
+
+    // Check required letters are present
+    for (const letter of Array.from(requiredLetters)) {
+      if (!upperWord.includes(letter)) {
+        return {
+          valid: false,
+          error: `Word must contain letter '${letter}'`
+        };
+      }
+    }
+
+    return { valid: true, error: '' };
+  };
+
   const handleAddWord = () => {
     const trimmedWord = currentInput.trim().toUpperCase();
-    if (trimmedWord && trimmedWord.length <= 5 && !wordIdeas.includes(trimmedWord)) {
-      setWordIdeas([...wordIdeas, trimmedWord]);
-      setCurrentInput('');
+
+    // Clear any previous validation error
+    setValidationError('');
+
+    if (!trimmedWord) return;
+
+    if (trimmedWord.length !== 5) {
+      setValidationError('Word must be exactly 5 letters');
+      return;
+    }
+
+    if (wordIdeas.includes(trimmedWord)) {
+      setValidationError('This word is already in your list');
+      return;
+    }
+
+    // Validate against grid constraints
+    const validation = validateWord(trimmedWord);
+    if (!validation.valid) {
+      setValidationError(validation.error);
+      return;
+    }
+
+    // All checks passed, add the word
+    setWordIdeas([...wordIdeas, trimmedWord]);
+    setCurrentInput('');
+  };
+
+  const handleInputChange = (value: string) => {
+    setCurrentInput(value.slice(0, 5));
+    // Clear error when user starts typing
+    if (validationError) {
+      setValidationError('');
     }
   };
 
@@ -90,23 +209,35 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
         <p>Keep track of potential words to try</p>
       </div>
 
-      <div className="word-input-area">
-        <input
-          type="text"
-          className="word-input"
-          value={currentInput}
-          onChange={(e) => setCurrentInput(e.target.value.slice(0, 5))}
-          onKeyPress={handleKeyPress}
-          placeholder="Enter a word..."
-          maxLength={5}
-        />
-        <button
-          className="add-word-btn"
-          onClick={handleAddWord}
-          disabled={!currentInput.trim()}
-        >
-          Add
-        </button>
+      <div className="word-input-section">
+        <div className="word-input-area">
+          <input
+            type="text"
+            className={`word-input ${validationError ? 'word-input--error' : ''}`}
+            value={currentInput}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder="Enter a word..."
+            maxLength={5}
+          />
+          <button
+            className="add-word-btn"
+            onClick={handleAddWord}
+            disabled={!currentInput.trim()}
+          >
+            Add
+          </button>
+        </div>
+        {validationError && (
+          <div className="validation-error">
+            <svg className="error-icon" width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="2" />
+              <path d="M8 4V9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              <circle cx="8" cy="12" r="0.5" fill="currentColor" />
+            </svg>
+            <span>{validationError}</span>
+          </div>
+        )}
       </div>
 
       {wordIdeas.length > 0 && (
