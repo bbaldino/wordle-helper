@@ -155,6 +155,11 @@
   color: #495057;
 }
 
+.invalid-count {
+  color: #ef4444;
+  font-weight: 500;
+}
+
 .clear-all-btn {
   padding: 6px 12px;
   font-size: 12px;
@@ -193,6 +198,19 @@
 .word-idea-item:hover {
   border-color: #6aaa64;
   background-color: #f0f8f0;
+}
+
+.word-idea-item--invalid {
+  opacity: 0.4;
+  background-color: #fef2f2;
+  border-color: #fecaca;
+  text-decoration: line-through;
+}
+
+.word-idea-item--invalid:hover {
+  border-color: #fecaca;
+  background-color: #fef2f2;
+  opacity: 0.5;
 }
 
 .word-idea-text {

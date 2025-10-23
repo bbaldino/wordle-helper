@@ -16,45 +16,8 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   const [showClearModal, setShowClearModal] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
 
-  // Get all letters that have been guessed
-  const getGuessedLetters = (): Set<string> => {
-    const guessed = new Set<string>();
-    grid.forEach(row => {
-      row.forEach(box => {
-        if (box.letter) {
-          guessed.add(box.letter.toUpperCase());
-        }
-      });
-    });
-    return guessed;
-  };
-
-  // Calculate letter frequency from word ideas, excluding already guessed letters
-  const calculateLetterFrequency = (): { letter: string; count: number }[] => {
-    const guessedLetters = getGuessedLetters();
-    const frequency: { [key: string]: number } = {};
-
-    wordIdeas.forEach(word => {
-      const lettersInWord = new Set<string>(); // Track unique letters per word
-      word.split('').forEach(letter => {
-        const upperLetter = letter.toUpperCase();
-        if (!guessedLetters.has(upperLetter)) {
-          lettersInWord.add(upperLetter);
-        }
-      });
-      // Count each unique letter once per word
-      lettersInWord.forEach(letter => {
-        frequency[letter] = (frequency[letter] || 0) + 1;
-      });
-    });
-
-    return Object.entries(frequency)
-      .map(([letter, count]) => ({ letter, count }))
-      .sort((a, b) => b.count - a.count);
-  };
-
   // Validate word against grid constraints
-  const validateWord = (word: string): { valid: boolean; error: string } => {
+  const validateWord = React.useCallback((word: string): { valid: boolean; error: string } => {
     const upperWord = word.toUpperCase();
 
     // Build constraints from grid
@@ -139,6 +102,58 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
     }
 
     return { valid: true, error: '' };
+  }, [grid]);
+
+  // Calculate invalid words whenever grid or wordIdeas change
+  const invalidWords = React.useMemo(() => {
+    const invalid = new Set<string>();
+    wordIdeas.forEach(word => {
+      const validation = validateWord(word);
+      if (!validation.valid) {
+        invalid.add(word);
+      }
+    });
+    return invalid;
+  }, [grid, wordIdeas, validateWord]);
+
+  // Get all letters that have been guessed
+  const getGuessedLetters = (): Set<string> => {
+    const guessed = new Set<string>();
+    grid.forEach(row => {
+      row.forEach(box => {
+        if (box.letter) {
+          guessed.add(box.letter.toUpperCase());
+        }
+      });
+    });
+    return guessed;
+  };
+
+  // Calculate letter frequency from word ideas, excluding already guessed letters and invalid words
+  const calculateLetterFrequency = (): { letter: string; count: number }[] => {
+    const guessedLetters = getGuessedLetters();
+    const frequency: { [key: string]: number } = {};
+
+    wordIdeas.forEach(word => {
+      // Skip invalid words
+      if (invalidWords.has(word)) return;
+
+      const lettersInWord = new Set<string>(); // Track unique letters per word
+      word.split('').forEach(letter => {
+        const upperLetter = letter.toUpperCase();
+        if (!guessedLetters.has(upperLetter)) {
+          lettersInWord.add(upperLetter);
+        }
+      });
+      // Count each unique letter once per word
+      lettersInWord.forEach(letter => {
+        frequency[letter] = (frequency[letter] || 0) + 1;
+      });
+    });
+
+    return Object.entries(frequency)
+      .map(([letter, count]) => ({ letter, count }))
+      .sort((a, b) => b.count - a.count);
   };
 
   const handleAddWord = () => {
@@ -244,24 +259,36 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
         <>
           <div className="word-ideas-container">
             <div className="word-ideas-header">
-              <span className="word-count">{wordIdeas.length} word{wordIdeas.length !== 1 ? 's' : ''}</span>
+              <span className="word-count">
+                {wordIdeas.length} word{wordIdeas.length !== 1 ? 's' : ''}
+                {invalidWords.size > 0 && (
+                  <span className="invalid-count"> ({invalidWords.size} invalid)</span>
+                )}
+              </span>
               <button className="clear-all-btn" onClick={handleClearAll}>
                 Clear all
               </button>
             </div>
             <div className="word-ideas-list">
-              {wordIdeas.map((word, index) => (
-                <div key={index} className="word-idea-item">
-                  <span className="word-idea-text">{word}</span>
-                  <button
-                    className="remove-word-btn"
-                    onClick={() => handleRemoveWord(word)}
-                    aria-label="Remove word"
+              {wordIdeas.map((word, index) => {
+                const isInvalid = invalidWords.has(word);
+                return (
+                  <div
+                    key={index}
+                    className={`word-idea-item ${isInvalid ? 'word-idea-item--invalid' : ''}`}
+                    title={isInvalid ? 'This word no longer matches the known clues' : ''}
                   >
-                    ×
-                  </button>
-                </div>
-              ))}
+                    <span className="word-idea-text">{word}</span>
+                    <button
+                      className="remove-word-btn"
+                      onClick={() => handleRemoveWord(word)}
+                      aria-label="Remove word"
+                    >
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
