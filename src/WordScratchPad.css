@@ -1,0 +1,281 @@
+.word-scratch-pad {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto 30px auto;
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
+}
+
+/* Responsive adjustments for side-by-side layout */
+@media (min-width: 1024px) {
+  .word-scratch-pad {
+    margin: 0;
+    max-width: none;
+  }
+}
+
+.scratch-pad-header {
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.scratch-pad-header h3 {
+  margin: 0 0 8px 0;
+  font-size: 1.4rem;
+  color: #1a1a1b;
+  font-weight: 600;
+}
+
+.scratch-pad-header p {
+  margin: 0;
+  font-size: 14px;
+  color: #787c7e;
+}
+
+.word-input-area {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.word-input {
+  flex: 1;
+  padding: 12px 16px;
+  font-size: 16px;
+  font-weight: 500;
+  text-transform: uppercase;
+  border: 2px solid #d3d6da;
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.word-input:focus {
+  border-color: #6aaa64;
+}
+
+.word-input::placeholder {
+  text-transform: none;
+  font-weight: normal;
+}
+
+.add-word-btn {
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+  background-color: #6aaa64;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.add-word-btn:hover:not(:disabled) {
+  background-color: #5a9a54;
+  transform: translateY(-1px);
+}
+
+.add-word-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.add-word-btn:disabled {
+  background-color: #d3d6da;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.word-ideas-container {
+  margin-bottom: 15px;
+}
+
+.word-ideas-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.word-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #495057;
+}
+
+.clear-all-btn {
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #787c7e;
+  background-color: transparent;
+  border: 1px solid #d3d6da;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.clear-all-btn:hover {
+  background-color: #ef4444;
+  border-color: #ef4444;
+  color: white;
+}
+
+.word-ideas-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.word-idea-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f8f9fa;
+  border: 2px solid #e9ecef;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.word-idea-item:hover {
+  border-color: #6aaa64;
+  background-color: #f0f8f0;
+}
+
+.word-idea-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a1b;
+  letter-spacing: 0.5px;
+}
+
+.remove-word-btn {
+  background: none;
+  border: none;
+  color: #787c7e;
+  font-size: 20px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+  transition: all 0.2s;
+}
+
+.remove-word-btn:hover {
+  background-color: #ef4444;
+  color: white;
+  transform: scale(1.1);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 30px;
+  color: #787c7e;
+  font-style: italic;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 2px dashed #dee2e6;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.letter-frequency-container {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.frequency-header {
+  margin-bottom: 15px;
+}
+
+.frequency-header h4 {
+  margin: 0 0 5px 0;
+  font-size: 1rem;
+  color: #1a1a1b;
+  font-weight: 600;
+}
+
+.frequency-header p {
+  margin: 0;
+  font-size: 12px;
+  color: #787c7e;
+}
+
+.frequency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.frequency-item {
+  display: grid;
+  grid-template-columns: 30px 1fr 40px;
+  align-items: center;
+  gap: 10px;
+}
+
+.frequency-letter {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1a1a1b;
+  text-align: center;
+  background-color: white;
+  padding: 6px;
+  border-radius: 4px;
+  border: 2px solid #d3d6da;
+}
+
+.frequency-bar-container {
+  height: 24px;
+  background-color: #e9ecef;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.frequency-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #6aaa64 0%, #5a9a54 100%);
+  transition: width 0.3s ease;
+  min-width: 2px;
+}
+
+.frequency-count {
+  font-size: 14px;
+  font-weight: 600;
+  color: #495057;
+  text-align: center;
+}
+
+.frequency-hint {
+  padding: 10px 12px;
+  background-color: #fff8e1;
+  border-left: 4px solid #c9b458;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #555;
+}
+
+.frequency-hint strong {
+  color: #1a1a1b;
+}

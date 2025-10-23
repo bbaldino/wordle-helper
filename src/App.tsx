@@ -25,7 +25,7 @@ function App() {
         />
         <div className="right-column">
           <WordPatternGenerator grid={grid} />
-          <WordScratchPad />
+          <WordScratchPad grid={grid} />
         </div>
       </main>
     </div>
