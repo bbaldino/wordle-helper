@@ -104,7 +104,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
     return { valid: true, error: '' };
   }, [grid]);
 
-  // Calculate invalid words whenever grid or wordIdeas change
+  // Calculate invalid words whenever wordIdeas or validateWord change
   const invalidWords = React.useMemo(() => {
     const invalid = new Set<string>();
     wordIdeas.forEach(word => {
@@ -114,7 +114,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
       }
     });
     return invalid;
-  }, [grid, wordIdeas, validateWord]);
+  }, [wordIdeas, validateWord]);
 
   // Get all letters that have been marked in guesses (any state except not-guessed)
   const getKnownLetters = (): Set<string> => {
