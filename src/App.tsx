@@ -7,9 +7,14 @@ import WordScratchPad from './WordScratchPad';
 function App() {
   // Store the grid data for pattern generation
   const [grid, setGrid] = useState<LetterBox[][]>([]);
+  const [wordIdeas, setWordIdeas] = useState<string[]>([]);
 
   const handleGridChange = (newGrid: LetterBox[][]) => {
     setGrid(newGrid);
+  };
+
+  const handleWordIdeasChange = (newWordIdeas: string[]) => {
+    setWordIdeas(newWordIdeas);
   };
 
   return (
@@ -24,8 +29,8 @@ function App() {
           onGridChange={handleGridChange}
         />
         <div className="right-column">
-          <WordPatternGenerator grid={grid} />
-          <WordScratchPad grid={grid} />
+          <WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />
+          <WordScratchPad grid={grid} wordIdeas={wordIdeas} onWordIdeasChange={handleWordIdeasChange} />
         </div>
       </main>
     </div>

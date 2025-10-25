@@ -9,6 +9,7 @@ interface LetterBox {
 
 interface WordPatternGeneratorProps {
   grid: LetterBox[][];
+  wordIdeas?: string[];
 }
 
 interface Constraints {
@@ -19,7 +20,7 @@ interface Constraints {
   requiredCounts: Record<string, number>; // Minimum required count per letter (from greens/yellows)
 }
 
-const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => {
+const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordIdeas = [] }) => {
   const [eliminatedPatterns, setEliminatedPatterns] = React.useState<Set<string>>(new Set());
 
   const togglePatternElimination = (pattern: string) => {
@@ -218,12 +219,12 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
     return Array.from(new Set(patterns)).sort();
   };
 
-  const formatPatternDisplay = (pattern: string): React.ReactElement => {
+  const formatPatternDisplay = (pattern: string, hasMatch: boolean): React.ReactElement => {
     return (
-      <div className="pattern-display">
+      <div className={`pattern-display ${hasMatch ? 'pattern-display--matched' : ''}`}>
         {pattern.split('').map((char, index) => (
-          <div 
-            key={index} 
+          <div
+            key={index}
             className={`pattern-cell ${char === '_' ? 'pattern-cell--blank' : 'pattern-cell--letter'}`}
           >
             {char === '_' ? '' : char}
@@ -235,6 +236,29 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
 
   const constraints = analyzeConstraints();
   const patterns = generatePatterns();
+
+  // Check if a word matches a pattern
+  const wordMatchesPattern = (word: string, pattern: string): boolean => {
+    if (word.length !== pattern.length) return false;
+
+    for (let i = 0; i < word.length; i++) {
+      // If pattern has a letter (not blank), word must match that letter
+      if (pattern[i] !== '_' && word[i].toUpperCase() !== pattern[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  // Find which patterns have matching word ideas
+  const patternsWithMatches = new Set<string>();
+  wordIdeas.forEach(word => {
+    patterns.forEach(pattern => {
+      if (wordMatchesPattern(word, pattern)) {
+        patternsWithMatches.add(pattern);
+      }
+    });
+  });
 
   // Sort patterns: active patterns first, then eliminated patterns at the bottom
   const sortedPatterns = [...patterns].sort((a, b) => {
@@ -315,17 +339,18 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid }) => 
             <div className="patterns-list">
               {sortedPatterns.map((pattern, index) => {
                 const isEliminated = eliminatedPatterns.has(pattern);
+                const hasMatch = patternsWithMatches.has(pattern);
                 return (
                   <div
                     key={index}
                     className={`pattern-item ${isEliminated ? 'pattern-item--eliminated' : ''}`}
                   >
-                    {formatPatternDisplay(pattern)}
+                    {formatPatternDisplay(pattern, hasMatch)}
                     <button
                       className="pattern-eliminate-btn"
                       onClick={() => togglePatternElimination(pattern)}
                       aria-label={isEliminated ? 'Restore pattern' : 'Eliminate pattern'}
-                      title={isEliminated ? 'Click to restore' : 'Click to eliminate'}
+                      title={isEliminated ? (hasMatch ? 'Click to restore (matches a word idea)' : 'Click to restore') : (hasMatch ? 'Click to eliminate (matches a word idea)' : 'Click to eliminate')}
                     >
                       ×
                     </button>

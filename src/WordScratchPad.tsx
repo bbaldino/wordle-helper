@@ -8,10 +8,11 @@ interface LetterBox {
 
 interface WordScratchPadProps {
   grid: LetterBox[][];
+  wordIdeas: string[];
+  onWordIdeasChange: (wordIdeas: string[]) => void;
 }
 
-const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
-  const [wordIdeas, setWordIdeas] = useState<string[]>([]);
+const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid, wordIdeas, onWordIdeasChange }) => {
   const [currentInput, setCurrentInput] = useState('');
   const [showClearModal, setShowClearModal] = useState(false);
   const [validationError, setValidationError] = useState<string>('');
@@ -183,7 +184,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
     }
 
     // All checks passed, add the word
-    setWordIdeas([...wordIdeas, trimmedWord]);
+    onWordIdeasChange([...wordIdeas, trimmedWord]);
     setCurrentInput('');
   };
 
@@ -202,7 +203,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   };
 
   const handleRemoveWord = (wordToRemove: string) => {
-    setWordIdeas(wordIdeas.filter(word => word !== wordToRemove));
+    onWordIdeasChange(wordIdeas.filter(word => word !== wordToRemove));
   };
 
   const handleClearAll = () => {
@@ -210,7 +211,7 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid }) => {
   };
 
   const confirmClearAll = () => {
-    setWordIdeas([]);
+    onWordIdeasChange([]);
     setShowClearModal(false);
   };
 
