@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LetterState } from './WordleKeyboard';
 import './WordGuessArea.css';
 
@@ -13,10 +13,12 @@ interface WordGuessAreaProps {
 
 export type { LetterBox };
 
+const STORAGE_KEY_GUESS_GRID = 'wordle-helper-guess-grid';
+
 const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
   // Initialize 6 rows of 5 empty letter boxes (like Wordle)
   const initializeGrid = (): LetterBox[][] => {
-    return Array(6).fill(null).map(() => 
+    return Array(6).fill(null).map(() =>
       Array(5).fill(null).map(() => ({
         letter: '',
         state: 'not-guessed' as LetterState
@@ -24,7 +26,25 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
     );
   };
 
-  const [grid, setGrid] = useState<LetterBox[][]>(initializeGrid);
+  // Load initial grid from localStorage or initialize empty
+  const [grid, setGrid] = useState<LetterBox[][]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_GUESS_GRID);
+      return saved ? JSON.parse(saved) : initializeGrid();
+    } catch (e) {
+      console.error('Failed to load guess grid from localStorage:', e);
+      return initializeGrid();
+    }
+  });
+
+  // Save grid to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_GUESS_GRID, JSON.stringify(grid));
+    } catch (e) {
+      console.error('Failed to save guess grid to localStorage:', e);
+    }
+  }, [grid]);
 
   const updateLetterContent = (rowIndex: number, colIndex: number, letter: string) => {
     if (letter.length > 1) return; // Only allow single characters
