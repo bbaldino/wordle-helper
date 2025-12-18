@@ -82,6 +82,7 @@
   background: white;
   transition: all 0.1s ease-in-out;
   outline: none;
+  box-sizing: border-box;
 }
 
 .letter-box:focus {
