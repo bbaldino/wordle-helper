@@ -80,14 +80,16 @@
   text-align: center;
   text-transform: uppercase;
   background: white;
-  transition: all 0.1s ease-in-out;
+  transition: all 0.15s ease-in-out;
   outline: none;
   box-sizing: border-box;
+  caret-color: transparent;
 }
 
 .letter-box:focus {
-  border-color: #787c7e;
-  box-shadow: 0 0 0 1px rgba(120, 124, 126, 0.3);
+  border-color: #1a1a1b;
+  border-width: 3px;
+  box-shadow: 0 0 0 2px rgba(26, 26, 27, 0.1);
 }
 
 .letter-box--empty {
