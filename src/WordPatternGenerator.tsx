@@ -250,9 +250,48 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     return true;
   };
 
-  // Find which patterns have matching word ideas
+  // Check if a word is still valid given current constraints
+  const isWordValid = (word: string): boolean => {
+    const upperWord = word.toUpperCase();
+
+    // Check for excluded letters
+    for (let i = 0; i < upperWord.length; i++) {
+      if (constraints.excludedLetters.has(upperWord[i])) {
+        return false;
+      }
+    }
+
+    // Check confirmed positions (greens)
+    for (const [pos, letter] of Object.entries(constraints.confirmedPositions)) {
+      if (upperWord[parseInt(pos)] !== letter) {
+        return false;
+      }
+    }
+
+    // Check wrong positions (yellows can't be in these spots)
+    for (const [letter, positions] of Object.entries(constraints.wrongPositions)) {
+      for (const pos of Array.from(positions)) {
+        if (upperWord[pos] === letter) {
+          return false;
+        }
+      }
+    }
+
+    // Check required letter counts
+    for (const [letter, requiredCount] of Object.entries(constraints.requiredCounts)) {
+      const countInWord = upperWord.split('').filter(c => c === letter).length;
+      if (countInWord < requiredCount) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  // Filter to only valid word ideas, then find which patterns have matches
+  const validWordIdeas = wordIdeas.filter(isWordValid);
   const patternsWithMatches = new Set<string>();
-  wordIdeas.forEach(word => {
+  validWordIdeas.forEach(word => {
     patterns.forEach(pattern => {
       if (wordMatchesPattern(word, pattern)) {
         patternsWithMatches.add(pattern);
