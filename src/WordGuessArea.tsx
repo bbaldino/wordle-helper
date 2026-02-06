@@ -137,6 +137,9 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
       if (nextInput) {
         nextInput.focus();
       }
+    } else if (value && colIndex === 4) {
+      // Blur after last letter to dismiss mobile keyboard before user taps to cycle colors
+      (document.activeElement as HTMLElement)?.blur();
     }
   };
 

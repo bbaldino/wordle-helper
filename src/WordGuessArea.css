@@ -80,7 +80,7 @@
   text-align: center;
   text-transform: uppercase;
   background: white;
-  transition: all 0.15s ease-in-out;
+  transition: background-color 0.15s ease-in-out, border-color 0.15s ease-in-out, color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
   outline: none;
   box-sizing: border-box;
   caret-color: transparent;
@@ -88,7 +88,6 @@
 
 .letter-box:focus {
   border-color: #1a1a1b;
-  border-width: 3px;
   box-shadow: 0 0 0 2px rgba(26, 26, 27, 0.1);
 }
 
