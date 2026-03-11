@@ -78,6 +78,13 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
           case 'not-in-word': {
             // Gray: Track, but only exclude if we never saw yellow/green
             letterHasGray.add(letter);
+            // Also track this position as a wrong position, in case the letter
+            // appears as yellow/green elsewhere (e.g. guessed in two spots,
+            // yellow in one and gray in the other).
+            if (!constraints.wrongPositions[letter]) {
+              constraints.wrongPositions[letter] = new Set();
+            }
+            constraints.wrongPositions[letter].add(colIndex);
             break;
           }
           // 'not-guessed' state is ignored for pattern generation

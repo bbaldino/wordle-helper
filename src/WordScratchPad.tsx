@@ -53,6 +53,13 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid, wordIdeas, onWord
             if (!letterInWord) {
               excludedLetters.add(letter);
             }
+            // Also track this as a wrong position, in case the letter
+            // appears as yellow/green elsewhere (e.g. guessed in two spots,
+            // yellow in one and gray in the other).
+            if (!wrongPositions[letter]) {
+              wrongPositions[letter] = new Set();
+            }
+            wrongPositions[letter].add(colIndex);
             break;
         }
       });
