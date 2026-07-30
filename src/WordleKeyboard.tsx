@@ -27,6 +27,14 @@ const STATE_RANK: Record<LetterState, number> = {
   'in-word-correct-position': 3,
 };
 
+// Short human-readable phrase for each state, used in the key's title/aria-label.
+const STATE_DESCRIPTION: Record<LetterState, string> = {
+  'not-guessed': 'not guessed yet',
+  'not-in-word': 'not in word',
+  'in-word-wrong-position': 'in word, wrong position',
+  'in-word-correct-position': 'correct position',
+};
+
 export function deriveLetterStates(grid: LetterBox[][]): Record<string, LetterState> {
   const states: Record<string, LetterState> = {};
   KEYBOARD_ROWS.flat().forEach((letter) => {
@@ -59,11 +67,20 @@ const WordleKeyboard: React.FC<WordleKeyboardProps> = ({ grid }) => {
 
       {KEYBOARD_ROWS.map((row, rowIndex) => (
         <div key={rowIndex} className="keyboard-row">
-          {row.map((letter) => (
-            <div key={letter} className={`keyboard-key keyboard-key--${letterStates[letter]}`}>
-              {letter}
-            </div>
-          ))}
+          {row.map((letter) => {
+            const state = letterStates[letter];
+            const description = `${letter} — ${STATE_DESCRIPTION[state]}`;
+            return (
+              <div
+                key={letter}
+                className={`keyboard-key keyboard-key--${state}`}
+                title={description}
+                aria-label={description}
+              >
+                {letter}
+              </div>
+            );
+          })}
         </div>
       ))}
     </div>

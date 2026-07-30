@@ -325,7 +325,11 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
       <div className="patterns-container">
         {patterns.length === 0 ? (
           <div className="no-patterns">
-            <p>No patterns available yet. Mark some letter states in your guesses above to generate patterns!</p>
+            {constraints.excludedLetters.size > 0 ? (
+              <p>No positional information yet — mark a green or yellow letter to generate patterns. Eliminated letters are shown on the keyboard above.</p>
+            ) : (
+              <p>No patterns available yet. Mark some letter states in your guesses above to generate patterns!</p>
+            )}
           </div>
         ) : (
           <>

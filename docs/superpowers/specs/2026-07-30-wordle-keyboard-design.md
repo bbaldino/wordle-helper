@@ -54,8 +54,9 @@ Holds the `LetterState` union type, moved out of `WordleKeyboard.tsx`.
 Today `WordGuessArea` imports its core type from the keyboard component, a
 backwards dependency that only exists because the type happened to be declared
 there. Since the keyboard is being rewritten anyway, the type moves to its own
-module. Consumers: `WordGuessArea`, `WordPatternGenerator`, `WordScratchPad`,
-`WordleKeyboard`.
+module. Consumers: `WordGuessArea`, `WordPatternGenerator`, `WordleKeyboard`.
+`WordScratchPad` keeps its own loosely-typed local `LetterBox` (`state:
+string`) and does not import `LetterState`.
 
 ### `src/WordleKeyboard.tsx` (rewritten in place)
 

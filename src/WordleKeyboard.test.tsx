@@ -1,5 +1,7 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
 import { LetterState } from './LetterState';
-import { deriveLetterStates } from './WordleKeyboard';
+import WordleKeyboard, { deriveLetterStates } from './WordleKeyboard';
 
 interface LetterBox {
   letter: string;
@@ -100,4 +102,23 @@ test('yellow does not override green for the same letter', () => {
   ]);
 
   expect(states['S']).toBe('in-word-correct-position');
+});
+
+test('renders each key with the CSS class matching its derived state', () => {
+  const grid = [
+    row(
+      ['A', 'in-word-correct-position'],
+      ['S', 'in-word-wrong-position'],
+      ['C', 'not-in-word'],
+      ['', 'not-guessed'],
+      ['', 'not-guessed'],
+    ),
+  ];
+
+  render(<WordleKeyboard grid={grid} />);
+
+  expect(screen.getByText('A')).toHaveClass('keyboard-key--in-word-correct-position');
+  expect(screen.getByText('S')).toHaveClass('keyboard-key--in-word-wrong-position');
+  expect(screen.getByText('C')).toHaveClass('keyboard-key--not-in-word');
+  expect(screen.getByText('Q')).toHaveClass('keyboard-key--not-guessed');
 });
