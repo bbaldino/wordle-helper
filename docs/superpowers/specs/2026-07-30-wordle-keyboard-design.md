@@ -68,7 +68,12 @@ own `useState`, rendered by nothing. Nothing imports it except for the
   be unit-tested without rendering.
 - `const WordleKeyboard: React.FC<{ grid: LetterBox[][] }>` — stateless and
   props-only. No `useState`, no click handlers, no `onLetterStateChange`, no
-  `externalLetterStates`. Renders three QWERTY rows plus the color legend.
+  `externalLetterStates`. Renders a heading and three QWERTY rows.
+
+No color legend: `WordGuessArea` already renders an identical four-swatch
+legend, and on desktop both are on screen at once. A one-line subtitle ("Dark
+letters have been ruled out by your guesses") carries the meaning without
+spending scarce vertical space on a duplicate.
 
 ### `src/WordleKeyboard.css`
 
