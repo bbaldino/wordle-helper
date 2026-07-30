@@ -3,6 +3,7 @@ import './App.css';
 import WordGuessArea, { LetterBox } from './WordGuessArea';
 import WordPatternGenerator from './WordPatternGenerator';
 import WordScratchPad from './WordScratchPad';
+import WordleKeyboard from './WordleKeyboard';
 
 const STORAGE_KEY_GRID = 'wordle-helper-grid';
 const STORAGE_KEY_WORD_IDEAS = 'wordle-helper-word-ideas';
@@ -96,6 +97,7 @@ function App() {
           onGridChange={handleGridChange}
         />
         <div className="right-column">
+          <WordleKeyboard grid={grid} />
           <WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />
           <WordScratchPad grid={grid} wordIdeas={wordIdeas} onWordIdeasChange={handleWordIdeasChange} />
         </div>
