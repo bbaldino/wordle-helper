@@ -1,46 +1,91 @@
-# Getting Started with Create React App
+# Wordle Helper
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A companion app for solving [Wordle](https://www.nytimes.com/games/wordle). You type in the
+guesses you have already made and mark how Wordle colored them; the app works out what the
+answer can still be and shows you where to go next.
 
-## Available Scripts
+It does not play Wordle for you and it has no dictionary — it never suggests a specific word.
+It tracks the constraints so you don't have to hold them in your head.
 
-In the project directory, you can run:
+## Using it
 
-### `npm start`
+1. Type a guess you have already played into a row of the grid.
+2. Click each letter to cycle its color until it matches what Wordle showed you:
+   gray (not in the word) → yellow (in the word, wrong spot) → green (correct spot).
+3. Read the three panels on the right, and add candidate words as you think of them.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+Everything is saved to `localStorage`, so closing the tab won't lose your puzzle.
+**Reset All** in the header clears it.
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
+## The panels
 
-### `npm test`
+**Enter Your Wordle Guesses** — six rows of five boxes, mirroring the real game. Typing
+advances to the next box automatically; the `✕` clears a row.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+**Letters Remaining** — a QWERTY keyboard colored the way Wordle colors its own: letters you
+have ruled out go dark, letters known to be in the word go green or yellow, and untried
+letters stay light. It is the fastest way to see what you still have to work with when
+composing the next guess.
 
-### `npm run build`
+**Possible Word Patterns** — every arrangement of the known letters that is still consistent
+with your clues, shown as `A A I _ _` style shapes. A pattern is highlighted when one of your
+word ideas matches it. If you know a pattern is wrong for a reason the app can't see, click
+its `✕` to strike it out; click again to bring it back.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+**Word Ideas** — a scratch pad for candidate words. A word is rejected outright if it already
+contradicts your clues, with the reason why. Ideas that were valid when you added them get
+flagged as invalid once a later guess rules them out, so the list stays honest as you play.
+Below it, **Unknown Letter Frequency** ranks the letters that appear across your still-valid
+ideas but that you haven't tested yet — high-frequency letters are the ones worth spending a
+guess on, since they split the remaining possibilities fastest.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+## Wordle rules it gets right
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+Repeated letters are where Wordle's feedback gets genuinely subtle, and where this app earns
+its keep. All of it lives in `src/wordConstraints.ts`:
 
-### `npm run eject`
+- **The strongest clue for a letter wins.** Guess a letter twice when the answer holds it
+  once and Wordle marks one copy green or yellow and the other gray. The letter is still in
+  the word, so it is never treated as eliminated.
+- **A letter can be required more than once.** If a single guess marks a letter green *and*
+  yellow, the answer contains at least two of it. Words with only one copy are ruled out —
+  presence is not enough.
+- **Counts are taken per guess, not summed.** Two guesses each showing one `E` mean the
+  answer has one `E`, not two. The requirement is the largest count any single guess proves.
+- **A gray copy still rules out its position.** When a letter is gray in one spot but present
+  elsewhere, that spot is recorded as somewhere the letter cannot go.
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+## Development
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+```bash
+npm install
+npm start                        # dev server on http://localhost:3000
+npm test -- --watchAll=false     # run the suite once (plain `npm test` watches)
+npm run build                    # production build into build/
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+Built with React 19, TypeScript, and Create React App. Tests use Jest and
+React Testing Library.
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+## Deployment
 
-## Learn More
+Hosted on Cloudflare Pages:
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+npm run deploy                   # builds, then `wrangler pages deploy`
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Project structure
+
+| File | Responsibility |
+| --- | --- |
+| `src/App.tsx` | Layout, shared grid and word-idea state, `localStorage` persistence |
+| `src/WordGuessArea.tsx` | The guess grid — the only place clues are entered |
+| `src/wordConstraints.ts` | Turns the grid into constraints and validates words against them |
+| `src/WordleKeyboard.tsx` | Read-only keyboard derived from the grid |
+| `src/WordPatternGenerator.tsx` | Generates and filters the possible letter patterns |
+| `src/WordScratchPad.tsx` | Word ideas, their validity, and letter-frequency analysis |
+| `src/LetterState.ts` | The four states a marked letter can be in |
+
+The guess grid is the single source of input. Everything else derives from it, so the panels
+can never disagree with each other about what the clues mean.
