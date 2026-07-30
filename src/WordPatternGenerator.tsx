@@ -1,23 +1,10 @@
 import React from 'react';
-import { LetterState } from './LetterState';
+import { LetterBox, analyzeConstraints, validateWord } from './wordConstraints';
 import './WordPatternGenerator.css';
-
-interface LetterBox {
-  letter: string;
-  state: LetterState;
-}
 
 interface WordPatternGeneratorProps {
   grid: LetterBox[][];
   wordIdeas?: string[];
-}
-
-interface Constraints {
-  confirmedPositions: { [position: number]: string }; // Green letters in confirmed positions
-  mustIncludeLetters: Set<string>; // Letters that still need additional placements beyond greens
-  excludedLetters: Set<string>; // Gray letters that must be excluded
-  wrongPositions: { [letter: string]: Set<number> }; // Letters that can't be in certain positions
-  requiredCounts: Record<string, number>; // Minimum required count per letter (from greens/yellows)
 }
 
 const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordIdeas = [] }) => {
@@ -35,103 +22,8 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     });
   };
 
-  const analyzeConstraints = (): Constraints => {
-    const constraints: Constraints = {
-      confirmedPositions: {},
-      mustIncludeLetters: new Set(),
-      excludedLetters: new Set(),
-      wrongPositions: {},
-      requiredCounts: {}
-    };
-
-    // Track global evidence per letter to resolve conflicts properly
-    const letterHasGreen = new Set<string>();
-    const letterHasYellow = new Set<string>();
-    const letterHasGray = new Set<string>();
-    // We do not sum greens across rows (different guesses). The minimal
-    // required count for a letter is the maximum number of present occurrences
-    // (yellow+green) seen in any single row/guess.
-
-    // Analyze each cell in the grid
-    grid.forEach((row) => {
-      row.forEach((letterBox, colIndex) => {
-        if (!letterBox.letter) return; // Skip empty boxes
-
-        const letter = letterBox.letter.toUpperCase();
-
-        switch (letterBox.state) {
-          case 'in-word-correct-position': {
-            // Green: Letter is confirmed in this position
-            constraints.confirmedPositions[colIndex] = letter;
-            letterHasGreen.add(letter);
-            break;
-          }
-          case 'in-word-wrong-position': {
-            // Yellow: Letter is in the word but not in this position
-            letterHasYellow.add(letter);
-            if (!constraints.wrongPositions[letter]) {
-              constraints.wrongPositions[letter] = new Set();
-            }
-            constraints.wrongPositions[letter].add(colIndex);
-            break;
-          }
-          case 'not-in-word': {
-            // Gray: Track, but only exclude if we never saw yellow/green
-            letterHasGray.add(letter);
-            // Also track this position as a wrong position, in case the letter
-            // appears as yellow/green elsewhere (e.g. guessed in two spots,
-            // yellow in one and gray in the other).
-            if (!constraints.wrongPositions[letter]) {
-              constraints.wrongPositions[letter] = new Set();
-            }
-            constraints.wrongPositions[letter].add(colIndex);
-            break;
-          }
-          // 'not-guessed' state is ignored for pattern generation
-        }
-      });
-    });
-
-    // Build requiredCounts by taking, for each row, the number of present (yellow/green) occurrences per letter,
-    // and keeping the maximum across rows. Also ensure it's at least the total number of greens for that letter.
-    grid.forEach((row) => {
-      const rowPresent: Record<string, number> = {};
-      row.forEach((letterBox) => {
-        if (!letterBox.letter) return;
-        const letter = letterBox.letter.toUpperCase();
-        if (letterBox.state === 'in-word-correct-position' || letterBox.state === 'in-word-wrong-position') {
-          rowPresent[letter] = (rowPresent[letter] || 0) + 1;
-        }
-      });
-      Object.entries(rowPresent).forEach(([letter, count]) => {
-        constraints.requiredCounts[letter] = Math.max(constraints.requiredCounts[letter] || 0, count);
-      });
-    });
-    // Build must-include letters: only letters whose required count exceeds
-    // the number already satisfied by confirmed (green) positions.
-    const placedByGreens: Record<string, number> = {};
-    Object.values(constraints.confirmedPositions).forEach((letter) => {
-      placedByGreens[letter] = (placedByGreens[letter] || 0) + 1;
-    });
-    Object.entries(constraints.requiredCounts).forEach(([letter, req]) => {
-      const placed = placedByGreens[letter] || 0;
-      if (req > placed) {
-        constraints.mustIncludeLetters.add(letter);
-      }
-    });
-
-    // Build excluded set: letters seen as gray AND never seen as yellow nor green
-    letterHasGray.forEach((letter) => {
-      if (!letterHasGreen.has(letter) && !letterHasYellow.has(letter)) {
-        constraints.excludedLetters.add(letter);
-      }
-    });
-
-    return constraints;
-  };
-
   const generatePatterns = (): string[] => {
-    const constraints = analyzeConstraints();
+    const constraints = analyzeConstraints(grid);
     
     // If no constraints exist, return empty array
     if (Object.keys(constraints.confirmedPositions).length === 0 && 
@@ -241,7 +133,7 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     );
   };
 
-  const constraints = analyzeConstraints();
+  const constraints = analyzeConstraints(grid);
   const patterns = generatePatterns();
 
   // Check if a word matches a pattern
@@ -258,42 +150,7 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
   };
 
   // Check if a word is still valid given current constraints
-  const isWordValid = (word: string): boolean => {
-    const upperWord = word.toUpperCase();
-
-    // Check for excluded letters
-    for (let i = 0; i < upperWord.length; i++) {
-      if (constraints.excludedLetters.has(upperWord[i])) {
-        return false;
-      }
-    }
-
-    // Check confirmed positions (greens)
-    for (const [pos, letter] of Object.entries(constraints.confirmedPositions)) {
-      if (upperWord[parseInt(pos)] !== letter) {
-        return false;
-      }
-    }
-
-    // Check wrong positions (yellows can't be in these spots)
-    for (const [letter, positions] of Object.entries(constraints.wrongPositions)) {
-      for (const pos of Array.from(positions)) {
-        if (upperWord[pos] === letter) {
-          return false;
-        }
-      }
-    }
-
-    // Check required letter counts
-    for (const [letter, requiredCount] of Object.entries(constraints.requiredCounts)) {
-      const countInWord = upperWord.split('').filter(c => c === letter).length;
-      if (countInWord < requiredCount) {
-        return false;
-      }
-    }
-
-    return true;
-  };
+  const isWordValid = (word: string): boolean => validateWord(word, constraints).valid;
 
   // Filter to only valid word ideas, then find which patterns have matches
   const validWordIdeas = wordIdeas.filter(isWordValid);

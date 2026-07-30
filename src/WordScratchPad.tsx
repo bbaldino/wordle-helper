@@ -1,10 +1,6 @@
 import React, { useState } from 'react';
+import { LetterBox, analyzeConstraints, validateWord as validateAgainstConstraints } from './wordConstraints';
 import './WordScratchPad.css';
-
-interface LetterBox {
-  letter: string;
-  state: string;
-}
 
 interface WordScratchPadProps {
   grid: LetterBox[][];
@@ -18,99 +14,10 @@ const WordScratchPad: React.FC<WordScratchPadProps> = ({ grid, wordIdeas, onWord
   const [validationError, setValidationError] = useState<string>('');
 
   // Validate word against grid constraints
-  const validateWord = React.useCallback((word: string): { valid: boolean; error: string } => {
-    const upperWord = word.toUpperCase();
-
-    // Build constraints from grid
-    const excludedLetters = new Set<string>();
-    const requiredLetters = new Set<string>();
-    const confirmedPositions: { [pos: number]: string } = {};
-    const wrongPositions: { [letter: string]: Set<number> } = {};
-
-    grid.forEach(row => {
-      row.forEach((box, colIndex) => {
-        if (!box.letter) return;
-        const letter = box.letter.toUpperCase();
-
-        switch (box.state) {
-          case 'in-word-correct-position':
-            confirmedPositions[colIndex] = letter;
-            requiredLetters.add(letter);
-            break;
-          case 'in-word-wrong-position':
-            requiredLetters.add(letter);
-            if (!wrongPositions[letter]) {
-              wrongPositions[letter] = new Set();
-            }
-            wrongPositions[letter].add(colIndex);
-            break;
-          case 'not-in-word':
-            // Only exclude if letter never appears as green or yellow
-            const letterInWord = Array.from(grid.flat()).some(
-              b => b.letter?.toUpperCase() === letter &&
-                   (b.state === 'in-word-correct-position' || b.state === 'in-word-wrong-position')
-            );
-            if (!letterInWord) {
-              excludedLetters.add(letter);
-            }
-            // Also track this as a wrong position, in case the letter
-            // appears as yellow/green elsewhere (e.g. guessed in two spots,
-            // yellow in one and gray in the other).
-            if (!wrongPositions[letter]) {
-              wrongPositions[letter] = new Set();
-            }
-            wrongPositions[letter].add(colIndex);
-            break;
-        }
-      });
-    });
-
-    // Check for excluded letters
-    for (let i = 0; i < upperWord.length; i++) {
-      const letter = upperWord[i];
-      if (excludedLetters.has(letter)) {
-        return {
-          valid: false,
-          error: `Letter '${letter}' is marked as not in the word`
-        };
-      }
-    }
-
-    // Check confirmed positions
-    for (const [pos, letter] of Object.entries(confirmedPositions)) {
-      const position = parseInt(pos);
-      if (upperWord[position] !== letter) {
-        return {
-          valid: false,
-          error: `Position ${position + 1} must be '${letter}'`
-        };
-      }
-    }
-
-    // Check wrong positions
-    for (const [letter, positions] of Object.entries(wrongPositions)) {
-      for (const pos of Array.from(positions)) {
-        if (upperWord[pos] === letter) {
-          return {
-            valid: false,
-            error: `Letter '${letter}' cannot be at position ${pos + 1}`
-          };
-        }
-      }
-    }
-
-    // Check required letters are present
-    for (const letter of Array.from(requiredLetters)) {
-      if (!upperWord.includes(letter)) {
-        return {
-          valid: false,
-          error: `Word must contain letter '${letter}'`
-        };
-      }
-    }
-
-    return { valid: true, error: '' };
-  }, [grid]);
+  const validateWord = React.useCallback(
+    (word: string) => validateAgainstConstraints(word, analyzeConstraints(grid)),
+    [grid]
+  );
 
   // Calculate invalid words whenever wordIdeas or validateWord change
   const invalidWords = React.useMemo(() => {

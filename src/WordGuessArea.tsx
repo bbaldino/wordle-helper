@@ -1,11 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { LetterState } from './LetterState';
+import { LetterBox } from './wordConstraints';
 import './WordGuessArea.css';
-
-interface LetterBox {
-  letter: string;
-  state: LetterState;
-}
 
 interface WordGuessAreaProps {
   onGridChange?: (grid: LetterBox[][]) => void;
