@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LetterState } from './WordleKeyboard';
+import { LetterState } from './LetterState';
 import './WordGuessArea.css';
 
 interface LetterBox {

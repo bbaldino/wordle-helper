@@ -1,5 +1,5 @@
 import React from 'react';
-import { LetterState } from './WordleKeyboard';
+import { LetterState } from './LetterState';
 import './WordPatternGenerator.css';
 
 interface LetterBox {

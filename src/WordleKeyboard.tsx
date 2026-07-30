@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
+import { LetterState } from './LetterState';
 import './WordleKeyboard.css';
-
-export type LetterState = 'not-guessed' | 'not-in-word' | 'in-word-wrong-position' | 'in-word-correct-position';
 
 interface WordleKeyboardProps {
   onLetterStateChange?: (letter: string, state: LetterState) => void;
