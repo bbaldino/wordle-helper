@@ -46,6 +46,15 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
     }
   }, [grid]);
 
+  // Notify the parent after the grid settles. This must not happen inside a
+  // setGrid updater: React runs those during the render phase (twice under
+  // StrictMode), and calling the parent's setState from there warns about
+  // updating one component while rendering another.
+  // onGridChange is intentionally not a dependency — the parent recreates it
+  // every render, which would re-fire this on every render.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { onGridChange?.(grid); }, [grid]);
+
   const updateLetterContent = (rowIndex: number, colIndex: number, letter: string) => {
     if (letter.length > 1) return; // Only allow single characters
     if (letter && !/^[A-Za-z]$/.test(letter)) return; // Only allow letters
@@ -56,12 +65,7 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
         ...newGrid[rowIndex][colIndex],
         letter: letter.toUpperCase()
       };
-      
-      // Notify parent of grid changes
-      if (onGridChange) {
-        onGridChange(newGrid);
-      }
-      
+
       return newGrid;
     });
   };
@@ -77,15 +81,8 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
           ...letterBox,
           state: newState
         };
-
-        // Letter state updated in grid
-        
-        // Notify parent of grid changes
-        if (onGridChange) {
-          onGridChange(newGrid);
-        }
       }
-      
+
       return newGrid;
     });
   };
@@ -109,12 +106,7 @@ const WordGuessArea: React.FC<WordGuessAreaProps> = ({ onGridChange }) => {
         letter: '',
         state: 'not-guessed' as LetterState
       }));
-      
-      // Notify parent of grid changes
-      if (onGridChange) {
-        onGridChange(newGrid);
-      }
-      
+
       return newGrid;
     });
   };
