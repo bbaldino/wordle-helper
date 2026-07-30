@@ -1,88 +1,68 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { LetterState } from './LetterState';
 import './WordleKeyboard.css';
 
-interface WordleKeyboardProps {
-  onLetterStateChange?: (letter: string, state: LetterState) => void;
-  externalLetterStates?: Record<string, LetterState>;
+interface LetterBox {
+  letter: string;
+  state: LetterState;
 }
 
-const WordleKeyboard: React.FC<WordleKeyboardProps> = ({ onLetterStateChange, externalLetterStates }) => {
-  // QWERTY keyboard layout
-  const keyboardRows = [
-    ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
-    ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
-    ['Z', 'X', 'C', 'V', 'B', 'N', 'M']
-  ];
+interface WordleKeyboardProps {
+  grid: LetterBox[][];
+}
 
-  // Initialize all letters to 'not-guessed' state
-  const initializeLetterStates = () => {
-    const states: Record<string, LetterState> = {};
-    keyboardRows.flat().forEach(letter => {
-      states[letter] = 'not-guessed';
+export const KEYBOARD_ROWS = [
+  ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'],
+  ['Z', 'X', 'C', 'V', 'B', 'N', 'M'],
+];
+
+// Strength of each signal. The strongest mark anywhere in the grid wins, so a
+// letter marked green in one guess stays green even if another copy of it was
+// marked gray — the double-letter case from commit ba9d761.
+const STATE_RANK: Record<LetterState, number> = {
+  'not-guessed': 0,
+  'not-in-word': 1,
+  'in-word-wrong-position': 2,
+  'in-word-correct-position': 3,
+};
+
+export function deriveLetterStates(grid: LetterBox[][]): Record<string, LetterState> {
+  const states: Record<string, LetterState> = {};
+  KEYBOARD_ROWS.flat().forEach((letter) => {
+    states[letter] = 'not-guessed';
+  });
+
+  grid.forEach((row) => {
+    row.forEach((letterBox) => {
+      if (!letterBox.letter) return;
+      const letter = letterBox.letter.toUpperCase();
+      if (!(letter in states)) return;
+      if (STATE_RANK[letterBox.state] > STATE_RANK[states[letter]]) {
+        states[letter] = letterBox.state;
+      }
     });
-    return states;
-  };
+  });
 
-  const [letterStates, setLetterStates] = useState<Record<string, LetterState>>(initializeLetterStates);
+  return states;
+}
 
-  // Cycle through states when clicking a letter
-  const cycleLetterState = (letter: string) => {
-    const stateOrder: LetterState[] = ['not-guessed', 'not-in-word', 'in-word-wrong-position', 'in-word-correct-position'];
-    const currentStateIndex = stateOrder.indexOf(letterStates[letter]);
-    const nextStateIndex = (currentStateIndex + 1) % stateOrder.length;
-    const nextState = stateOrder[nextStateIndex];
-    
-    setLetterStates(prev => ({
-      ...prev,
-      [letter]: nextState
-    }));
-
-    if (onLetterStateChange) {
-      onLetterStateChange(letter, nextState);
-    }
-  };
-
-  const getLetterClassName = (letter: string) => {
-    // Use external state if available, otherwise fall back to internal state
-    const state = externalLetterStates?.[letter] || letterStates[letter];
-    return `keyboard-key keyboard-key--${state}`;
-  };
+const WordleKeyboard: React.FC<WordleKeyboardProps> = ({ grid }) => {
+  const letterStates = deriveLetterStates(grid);
 
   return (
     <div className="wordle-keyboard">
-      <div className="keyboard-instructions">
-        <p>Click letters to cycle through states:</p>
-        <div className="state-legend">
-          <span className="legend-item">
-            <span className="legend-color legend-color--not-guessed"></span>
-            Not guessed yet
-          </span>
-          <span className="legend-item">
-            <span className="legend-color legend-color--not-in-word"></span>
-            Not in word
-          </span>
-          <span className="legend-item">
-            <span className="legend-color legend-color--in-word-wrong-position"></span>
-            In word, wrong position
-          </span>
-          <span className="legend-item">
-            <span className="legend-color legend-color--in-word-correct-position"></span>
-            Correct position
-          </span>
-        </div>
+      <div className="keyboard-header">
+        <h3>Letters Remaining</h3>
+        <p>Dark letters have been ruled out by your guesses</p>
       </div>
-      
-      {keyboardRows.map((row, rowIndex) => (
+
+      {KEYBOARD_ROWS.map((row, rowIndex) => (
         <div key={rowIndex} className="keyboard-row">
-          {row.map(letter => (
-            <button
-              key={letter}
-              className={getLetterClassName(letter)}
-              onClick={() => cycleLetterState(letter)}
-            >
+          {row.map((letter) => (
+            <div key={letter} className={`keyboard-key keyboard-key--${letterStates[letter]}`}>
               {letter}
-            </button>
+            </div>
           ))}
         </div>
       ))}
