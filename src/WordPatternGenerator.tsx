@@ -315,61 +315,11 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     return aEliminated ? 1 : -1; // Eliminated patterns go to the bottom
   });
 
-  // Derive display-only must-include list: letters still needed beyond confirmed greens
-  const greensDisplayCount: Record<string, number> = {};
-  Object.values(constraints.confirmedPositions).forEach((letter) => {
-    greensDisplayCount[letter] = (greensDisplayCount[letter] || 0) + 1;
-  });
-  const displayMustInclude: string[] = Object.entries(constraints.requiredCounts)
-    .filter(([letter, req]) => req > (greensDisplayCount[letter] || 0))
-    .map(([letter]) => letter);
-
   return (
     <div className="word-pattern-generator">
       <div className="pattern-header">
         <h3>Possible Word Patterns</h3>
         <p>Based on your guesses, here are the possible letter combinations:</p>
-      </div>
-
-      <div className="constraints-summary">
-        {Object.keys(constraints.confirmedPositions).length > 0 && (
-          <div className="constraint-group">
-            <strong>Confirmed positions:</strong>
-            <div className="confirmed-letters">
-              {Object.entries(constraints.confirmedPositions).map(([pos, letter]) => (
-                <span key={pos} className="confirmed-letter">
-                  {letter} at position {parseInt(pos) + 1}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {displayMustInclude.length > 0 && (
-          <div className="constraint-group">
-            <strong>Must include letters:</strong>
-            <div className="must-include-letters">
-              {displayMustInclude.map(letter => (
-                <span key={letter} className="must-include-letter">
-                  {letter}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {constraints.excludedLetters.size > 0 && (
-          <div className="constraint-group">
-            <strong>Excluded letters:</strong>
-            <div className="excluded-letters">
-              {Array.from(constraints.excludedLetters).map(letter => (
-                <span key={letter} className="excluded-letter">
-                  {letter}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
 
       <div className="patterns-container">
