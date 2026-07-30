@@ -106,6 +106,10 @@
   background-color: #fafafa;
   width: 100%;
   max-width: 100%;
+  /* Without this the padding adds to the full-width content box, making the
+     element wider than the viewport: it scrolls sideways on narrow screens and
+     gets clipped by overflow:hidden on desktop. */
+  box-sizing: border-box;
 }
 
 /* Responsive layout for wider screens */
