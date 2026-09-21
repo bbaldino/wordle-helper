@@ -1,5 +1,5 @@
 import React from 'react'
-import { render } from '@testing-library/react'
+import { act, fireEvent, render } from '@testing-library/react'
 import { LetterState } from './LetterState'
 import WordPatternGenerator, { heatColorForRatio, matchRatioForCount } from './WordPatternGenerator'
 
@@ -111,5 +111,143 @@ describe('WordPatternGenerator heatmap rendering', () => {
 
     expect(titles).toContain('Click to eliminate (matches 1 word idea)')
     expect(titles.some((t) => t === 'Click to eliminate')).toBe(true)
+  })
+})
+
+describe('WordPatternGenerator pattern list keying (mobile sticky-hover bug fix)', () => {
+  // Single yellow 'A' generates every remaining-position pattern, sorted
+  // alphabetically: _A___, __A__, ___A_, ____A.
+  const grid: LetterBox[][] = [row(['A', 'in-word-wrong-position'])]
+  // 'XBAXX'/'YYAYY' match __A__ (2 matches); 'ZZZAZ' matches ___A_ (1 match);
+  // _A___ and ____A have 0 matches.
+  const wordIdeas = ['XBAXX', 'YYAYY', 'ZZZAZ']
+
+  test("eliminating one pattern does not leak its state onto another pattern's button", () => {
+    const { getAllByRole } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const buttonsBefore = getAllByRole('button', { name: 'Eliminate pattern' })
+    expect(buttonsBefore).toHaveLength(4)
+
+    // Capture the actual DOM node for ___A_ (1 match) before eliminating anything.
+    const warmPatternButton = buttonsBefore[2]
+    const warmPatternTitleBefore = warmPatternButton.getAttribute('title')
+    expect(warmPatternTitleBefore).toBe('Click to eliminate (matches 1 word idea)')
+
+    // Eliminate __A__ (2 matches). This re-sorts it to the bottom of the list,
+    // shifting ___A_ up one slot in the rendered order.
+    fireEvent.click(buttonsBefore[1])
+
+    // If list items were keyed by array index (the bug), React would reuse the
+    // DOM node that used to occupy this position for whatever pattern now
+    // renders there, mutating this captured node's title to a DIFFERENT
+    // pattern's state. Keyed by pattern string (the fix), this exact node
+    // keeps representing ___A_ regardless of where it re-sorts to.
+    expect(warmPatternButton.getAttribute('title')).toBe(warmPatternTitleBefore)
+    expect(warmPatternButton.getAttribute('aria-label')).toBe('Eliminate pattern')
+
+    // The eliminated pattern re-sorts correctly and reflects its own new state.
+    const restoreButtons = getAllByRole('button', { name: 'Restore pattern' })
+    expect(restoreButtons).toHaveLength(1)
+    expect(restoreButtons[0].getAttribute('title')).toBe('Click to restore (matches 2 word ideas)')
+  })
+})
+
+describe('WordPatternGenerator matching word ideas tooltip', () => {
+  // Sorted patterns: _A___ (0 matches), __A__ (2 matches: XBAXX, YYAYY),
+  // ___A_ (1 match: ZZZAZ), ____A (0 matches).
+  const grid: LetterBox[][] = [row(['A', 'in-word-wrong-position'])]
+  const wordIdeas = ['XBAXX', 'YYAYY', 'ZZZAZ']
+
+  beforeEach(() => {
+    jest.useFakeTimers()
+  })
+
+  afterEach(() => {
+    act(() => {
+      jest.runOnlyPendingTimers()
+    })
+    jest.useRealTimers()
+  })
+
+  test('hovering a matched pattern for ~1.5s shows a tooltip listing the matching word ideas', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const hottest = displays[1] // __A__
+
+    fireEvent.mouseEnter(hottest)
+    act(() => {
+      jest.advanceTimersByTime(1500)
+    })
+
+    const tooltip = hottest.querySelector('.pattern-tooltip')
+    expect(tooltip).not.toBeNull()
+    expect(tooltip?.textContent).toContain('XBAXX')
+    expect(tooltip?.textContent).toContain('YYAYY')
+  })
+
+  test('hovering a pattern with no matches shows no tooltip even after the delay', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const unmatched = displays[0] // _A___
+
+    fireEvent.mouseEnter(unmatched)
+    act(() => {
+      jest.advanceTimersByTime(1500)
+    })
+
+    expect(unmatched.querySelector('.pattern-tooltip')).toBeNull()
+  })
+
+  test('hover-then-leave before the delay elapses does not show the tooltip', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const hottest = displays[1] // __A__
+
+    fireEvent.mouseEnter(hottest)
+    act(() => {
+      jest.advanceTimersByTime(500)
+    })
+    fireEvent.mouseLeave(hottest)
+    act(() => {
+      jest.advanceTimersByTime(1500)
+    })
+
+    expect(hottest.querySelector('.pattern-tooltip')).toBeNull()
+  })
+
+  test('tapping/clicking a matched pattern display toggles the tooltip open then closed', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const warm = displays[2] // ___A_
+
+    fireEvent.click(warm)
+    expect(warm.querySelector('.pattern-tooltip')).not.toBeNull()
+
+    fireEvent.click(warm)
+    expect(warm.querySelector('.pattern-tooltip')).toBeNull()
+  })
+
+  test('clicking the eliminate button does not also open the tooltip', () => {
+    const { container, getAllByRole } = render(
+      <WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />,
+    )
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const hottest = displays[1] // __A__
+    const buttons = getAllByRole('button', { name: 'Eliminate pattern' })
+
+    fireEvent.click(buttons[1]) // eliminate button for __A__
+
+    expect(hottest.querySelector('.pattern-tooltip')).toBeNull()
+  })
+
+  test('focusing a matched pattern shows the tooltip, blurring hides it', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const hottest = displays[1] // __A__
+
+    fireEvent.focus(hottest)
+    expect(hottest.querySelector('.pattern-tooltip')).not.toBeNull()
+
+    fireEvent.blur(hottest)
+    expect(hottest.querySelector('.pattern-tooltip')).toBeNull()
   })
 })
