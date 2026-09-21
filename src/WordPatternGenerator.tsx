@@ -95,6 +95,17 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     setActivePattern((prev) => (prev === pattern ? null : pattern))
   }
 
+  // Browsers focus a clicked/tapped focusable element as part of mousedown's default
+  // action, BEFORE the subsequent click fires. Since onFocus also opens the tooltip,
+  // that ordering would make the first tap on a not-yet-focused pattern open it via
+  // focus and then immediately close it via the click that follows (open-then-close,
+  // net no-op). Suppressing that default focus-on-mousedown keeps onClick as the sole
+  // pointer/touch toggle, while keyboard Tab focus (which doesn't go through
+  // mousedown) is unaffected and still opens the tooltip via onFocus.
+  const handlePatternMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }
+
   const handlePatternFocus = (pattern: string, hasMatches: boolean) => {
     if (!hasMatches) return
     clearHoverTimer()
@@ -245,6 +256,7 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
         aria-describedby={hasMatches && isActive ? tooltipId : undefined}
         onMouseEnter={() => handlePatternHoverStart(pattern, hasMatches)}
         onMouseLeave={() => handlePatternHoverEnd(pattern)}
+        onMouseDown={handlePatternMouseDown}
         onFocus={() => handlePatternFocus(pattern, hasMatches)}
         onBlur={() => handlePatternBlur(pattern)}
         onClick={() => handlePatternClick(pattern, hasMatches)}

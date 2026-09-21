@@ -1,5 +1,6 @@
 import React from 'react'
 import { act, fireEvent, render } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { LetterState } from './LetterState'
 import WordPatternGenerator, { heatColorForRatio, matchRatioForCount } from './WordPatternGenerator'
 
@@ -226,7 +227,45 @@ describe('WordPatternGenerator matching word ideas tooltip', () => {
     expect(warm.querySelector('.pattern-tooltip')).toBeNull()
   })
 
-  test('clicking the eliminate button does not also open the tooltip', () => {
+  test('a single real click/tap on a not-yet-focused pattern opens the tooltip (not open-then-close)', () => {
+    // Real browsers (and touch, which synthesizes the same sequence) focus a
+    // focusable target as part of mousedown's default action, BEFORE the click
+    // that follows fires. `fireEvent.click` in jsdom does NOT reproduce that
+    // ordering, so it can't catch a bug where focus (which also opens the
+    // tooltip) races the click's own toggle. `userEvent.click` does reproduce
+    // it: pointerdown -> mousedown (default focus, unless prevented) -> focus
+    // -> pointerup -> mouseup -> click. Without the mousedown preventDefault()
+    // fix, this sequence would open the tooltip via focus and then immediately
+    // close it via the click's toggle, leaving nothing visible after a single
+    // tap -- this test fails against that bug and passes with the fix.
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const warm = displays[2] // ___A_
+
+    expect(document.activeElement).not.toBe(warm)
+    userEvent.click(warm)
+
+    const tooltip = warm.querySelector('.pattern-tooltip')
+    expect(tooltip).not.toBeNull()
+    expect(tooltip?.textContent).toContain('ZZZAZ')
+
+    userEvent.click(warm)
+    expect(warm.querySelector('.pattern-tooltip')).toBeNull()
+  })
+
+  test('keyboard focus still opens the tooltip after the click/mousedown fix', () => {
+    const { container } = render(<WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />)
+    const displays = Array.from(container.querySelectorAll('.pattern-display')) as HTMLElement[]
+    const hottest = displays[1] // __A__
+
+    userEvent.tab()
+    userEvent.tab()
+
+    expect(document.activeElement).toBe(hottest)
+    expect(hottest.querySelector('.pattern-tooltip')).not.toBeNull()
+  })
+
+  test('clicking the eliminate button does not toggle the tooltip for its pattern', () => {
     const { container, getAllByRole } = render(
       <WordPatternGenerator grid={grid} wordIdeas={wordIdeas} />,
     )
@@ -234,9 +273,16 @@ describe('WordPatternGenerator matching word ideas tooltip', () => {
     const hottest = displays[1] // __A__
     const buttons = getAllByRole('button', { name: 'Eliminate pattern' })
 
-    fireEvent.click(buttons[1]) // eliminate button for __A__
+    userEvent.click(buttons[1]) // eliminate button for __A__
 
     expect(hottest.querySelector('.pattern-tooltip')).toBeNull()
+
+    // If eliminating had (incorrectly) also toggled the tooltip's active-pattern
+    // state for __A__, the very next click on its display would close an
+    // already-open tooltip instead of opening a fresh one. Asserting it opens
+    // here proves the eliminate click left the tooltip state untouched.
+    fireEvent.click(hottest)
+    expect(hottest.querySelector('.pattern-tooltip')).not.toBeNull()
   })
 
   test('focusing a matched pattern shows the tooltip, blurring hides it', () => {
