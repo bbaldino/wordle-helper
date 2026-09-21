@@ -114,6 +114,16 @@
     font-size: 18px;
     flex-shrink: 0;
   }
+
+  .pattern-tooltip {
+    min-width: 120px;
+    max-width: 160px;
+    padding: 8px 10px;
+  }
+
+  .pattern-tooltip-words {
+    font-size: 12px;
+  }
 }
 
 .pattern-item {
@@ -159,23 +169,28 @@
   flex-shrink: 0;
 }
 
-.pattern-eliminate-btn:hover {
-  background-color: #ef4444;
-  border-color: #ef4444;
-  color: white;
-  transform: scale(1.1);
+/* Hover-only styling for the eliminate button. Scoped behind `(hover: hover)`
+   so touch devices (where a tap can leave `:hover` "stuck" on the element)
+   never apply it -- see PART A of the tooltip/hover-fix brief. */
+@media (hover: hover) {
+  .pattern-eliminate-btn:hover {
+    background-color: #ef4444;
+    border-color: #ef4444;
+    color: white;
+    transform: scale(1.1);
+  }
+
+  .pattern-item--eliminated .pattern-eliminate-btn:hover {
+    background-color: #5a9a54;
+    border-color: #5a9a54;
+    transform: scale(1.1);
+  }
 }
 
 .pattern-item--eliminated .pattern-eliminate-btn {
   background-color: #6aaa64;
   border-color: #6aaa64;
   color: white;
-}
-
-.pattern-item--eliminated .pattern-eliminate-btn:hover {
-  background-color: #5a9a54;
-  border-color: #5a9a54;
-  transform: scale(1.1);
 }
 
 .pattern-display {
@@ -185,6 +200,48 @@
   border: 2px solid transparent;
   border-radius: 6px;
   transition: all 0.2s;
+}
+
+.pattern-display--has-matches {
+  cursor: pointer;
+}
+
+.pattern-display--has-matches:focus-visible {
+  outline: 2px solid #4a90a4;
+  outline-offset: 2px;
+}
+
+.pattern-tooltip {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 8px;
+  z-index: 20;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  padding: 10px 12px;
+  min-width: 160px;
+  max-width: 240px;
+  text-align: left;
+  pointer-events: none;
+}
+
+.pattern-tooltip-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #787c7e;
+  margin-bottom: 4px;
+}
+
+.pattern-tooltip-words {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1a1a1b;
+  word-break: break-word;
 }
 
 .pattern-cell {

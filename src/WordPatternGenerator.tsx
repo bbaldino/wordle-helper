@@ -39,8 +39,22 @@ export const matchRatioForCount = (count: number, maxCount: number): number => {
   return maxCount <= 1 ? 0.15 : count / maxCount
 }
 
+const TOOLTIP_HOVER_DELAY_MS = 1500
+
 const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordIdeas = [] }) => {
   const [eliminatedPatterns, setEliminatedPatterns] = React.useState<Set<string>>(new Set())
+  const [activePattern, setActivePattern] = React.useState<string | null>(null)
+  const hoverTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearHoverTimer = () => {
+    if (hoverTimerRef.current !== null) {
+      clearTimeout(hoverTimerRef.current)
+      hoverTimerRef.current = null
+    }
+  }
+
+  // Cancel any pending hover timer on unmount so it doesn't fire after teardown.
+  React.useEffect(() => clearHoverTimer, [])
 
   const togglePatternElimination = (pattern: string) => {
     setEliminatedPatterns((prev) => {
@@ -52,6 +66,55 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
       }
       return newSet
     })
+  }
+
+  const handleEliminateClick = (event: React.MouseEvent<HTMLButtonElement>, pattern: string) => {
+    // The eliminate button lives outside `.pattern-display`, but stop
+    // propagation defensively so a click here can never also toggle the tooltip.
+    event.stopPropagation()
+    togglePatternElimination(pattern)
+  }
+
+  const handlePatternHoverStart = (pattern: string, hasMatches: boolean) => {
+    if (!hasMatches) return
+    clearHoverTimer()
+    hoverTimerRef.current = setTimeout(() => {
+      setActivePattern(pattern)
+      hoverTimerRef.current = null
+    }, TOOLTIP_HOVER_DELAY_MS)
+  }
+
+  const handlePatternHoverEnd = (pattern: string) => {
+    clearHoverTimer()
+    setActivePattern((prev) => (prev === pattern ? null : prev))
+  }
+
+  const handlePatternClick = (pattern: string, hasMatches: boolean) => {
+    clearHoverTimer()
+    if (!hasMatches) return
+    setActivePattern((prev) => (prev === pattern ? null : pattern))
+  }
+
+  // Browsers focus a clicked/tapped focusable element as part of mousedown's default
+  // action, BEFORE the subsequent click fires. Since onFocus also opens the tooltip,
+  // that ordering would make the first tap on a not-yet-focused pattern open it via
+  // focus and then immediately close it via the click that follows (open-then-close,
+  // net no-op). Suppressing that default focus-on-mousedown keeps onClick as the sole
+  // pointer/touch toggle, while keyboard Tab focus (which doesn't go through
+  // mousedown) is unaffected and still opens the tooltip via onFocus.
+  const handlePatternMouseDown = (event: React.MouseEvent<HTMLDivElement>) => {
+    event.preventDefault()
+  }
+
+  const handlePatternFocus = (pattern: string, hasMatches: boolean) => {
+    if (!hasMatches) return
+    clearHoverTimer()
+    setActivePattern(pattern)
+  }
+
+  const handlePatternBlur = (pattern: string) => {
+    clearHoverTimer()
+    setActivePattern((prev) => (prev === pattern ? null : prev))
   }
 
   const generatePatterns = (): string[] => {
@@ -160,6 +223,8 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
     pattern: string,
     ratio: number,
     count: number,
+    matchingWords: string[],
+    isActive: boolean,
   ): React.ReactElement => {
     const style: React.CSSProperties = {}
 
@@ -175,8 +240,27 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
       style.boxShadow = `0 0 ${blur}px ${spread}px hsla(${hue}, 85%, 50%, ${glowOpacity})`
     }
 
+    const hasMatches = matchingWords.length > 0
+    const tooltipId = `pattern-tooltip-${pattern}`
+
     return (
-      <div className="pattern-display" style={style}>
+      <div
+        className={`pattern-display ${hasMatches ? 'pattern-display--has-matches' : ''}`}
+        style={style}
+        tabIndex={hasMatches ? 0 : undefined}
+        aria-label={
+          hasMatches
+            ? `Pattern ${pattern}, matches ${count} word idea${count === 1 ? '' : 's'}. Focus or tap to show matching word ideas.`
+            : undefined
+        }
+        aria-describedby={hasMatches && isActive ? tooltipId : undefined}
+        onMouseEnter={() => handlePatternHoverStart(pattern, hasMatches)}
+        onMouseLeave={() => handlePatternHoverEnd(pattern)}
+        onMouseDown={handlePatternMouseDown}
+        onFocus={() => handlePatternFocus(pattern, hasMatches)}
+        onBlur={() => handlePatternBlur(pattern)}
+        onClick={() => handlePatternClick(pattern, hasMatches)}
+      >
         {pattern.split('').map((char, index) => (
           <div
             key={index}
@@ -185,6 +269,14 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
             {char === '_' ? '' : char}
           </div>
         ))}
+        {hasMatches && isActive && (
+          <div className="pattern-tooltip" role="tooltip" id={tooltipId}>
+            <div className="pattern-tooltip-heading">Your word ideas</div>
+            <div className="pattern-tooltip-words">
+              {matchingWords.map((word) => word.toUpperCase()).join(', ')}
+            </div>
+          </div>
+        )}
       </div>
     )
   }
@@ -208,17 +300,24 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
   // Check if a word is still valid given current constraints
   const isWordValid = (word: string): boolean => validateWord(word, constraints).valid
 
-  // Filter to only valid word ideas, then count how many match each pattern
+  // Filter to only valid word ideas, then collect which ones match each pattern
+  // (preserving word-idea order). The heatmap count for a pattern is simply the
+  // length of its matching-words list, so the two stay in sync by construction.
   const validWordIdeas = wordIdeas.filter(isWordValid)
-  const matchCountByPattern = new Map<string, number>()
+  const matchWordsByPattern = new Map<string, string[]>()
   validWordIdeas.forEach((word) => {
     patterns.forEach((pattern) => {
       if (wordMatchesPattern(word, pattern)) {
-        matchCountByPattern.set(pattern, (matchCountByPattern.get(pattern) || 0) + 1)
+        const existing = matchWordsByPattern.get(pattern)
+        if (existing) {
+          existing.push(word)
+        } else {
+          matchWordsByPattern.set(pattern, [word])
+        }
       }
     })
   })
-  const maxCount = Math.max(...Array.from(matchCountByPattern.values()), 0)
+  const maxCount = Math.max(0, ...Array.from(matchWordsByPattern.values(), (words) => words.length))
 
   // Sort patterns: active patterns first, then eliminated patterns at the bottom
   const sortedPatterns = [...patterns].sort((a, b) => {
@@ -258,21 +357,23 @@ const WordPatternGenerator: React.FC<WordPatternGeneratorProps> = ({ grid, wordI
               found:
             </div>
             <div className="patterns-list">
-              {sortedPatterns.map((pattern, index) => {
+              {sortedPatterns.map((pattern) => {
                 const isEliminated = eliminatedPatterns.has(pattern)
-                const count = matchCountByPattern.get(pattern) || 0
+                const matchingWords = matchWordsByPattern.get(pattern) ?? []
+                const count = matchingWords.length
                 const ratio = matchRatioForCount(count, maxCount)
                 const matchSuffix =
                   count > 0 ? ` (matches ${count} word idea${count === 1 ? '' : 's'})` : ''
+                const isActive = activePattern === pattern
                 return (
                   <div
-                    key={index}
+                    key={pattern}
                     className={`pattern-item ${isEliminated ? 'pattern-item--eliminated' : ''}`}
                   >
-                    {formatPatternDisplay(pattern, ratio, count)}
+                    {formatPatternDisplay(pattern, ratio, count, matchingWords, isActive)}
                     <button
                       className="pattern-eliminate-btn"
-                      onClick={() => togglePatternElimination(pattern)}
+                      onClick={(event) => handleEliminateClick(event, pattern)}
                       aria-label={isEliminated ? 'Restore pattern' : 'Eliminate pattern'}
                       title={
                         isEliminated
